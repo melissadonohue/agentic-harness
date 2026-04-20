@@ -544,15 +544,25 @@ fi
 if [[ -n "${PR_URL}" ]]; then
   log "PR linked to issue #${ISSUE_NUMBER}: ${PR_URL}"
 
+  # Extract PR number from URL (e.g., https://github.com/owner/repo/pull/42 → 42)
+  PR_NUMBER_FOR_REVIEW=$(echo "${PR_URL}" | grep -oP '/pull/\K[0-9]+' || \
+    gh pr list --head "${BRANCH_NAME}" --json number --jq '.[0].number' 2>/dev/null || echo "")
+
   # Post completion checkpoint
   post_checkpoint "completed" \
     "Implementation complete. PR created: ${PR_URL}" \
     "Awaiting review."
 
-  # Trigger review (stub — Phase 4)
-  log "Review not yet implemented (Phase 4 stub). Skipping /review."
-  # TODO(phase-4): Invoke the review agent on the PR
-  # scripts/review.sh "${PR_URL}"
+  if [[ -z "${PR_NUMBER_FOR_REVIEW}" ]]; then
+    log "Warning: Could not extract PR number from URL. Skipping review."
+  else
+    # Trigger the review pipeline
+    log "Triggering review pipeline for PR #${PR_NUMBER_FOR_REVIEW}..."
+    "${REPO_ROOT}/scripts/review.sh" "${PR_NUMBER_FOR_REVIEW}" --budget "${CI_BUDGET}" || {
+      log "Review pipeline exited with non-zero status."
+      # Review escalation is handled within review.sh — don't fail dispatch
+    }
+  fi
 else
   log "No PR was created."
   post_checkpoint "blocked" \

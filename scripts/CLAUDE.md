@@ -72,6 +72,52 @@ DATABASE_URL=postgresql://... npx tsx scripts/seed.ts
 
 **Extensibility**: As new entities are added to the schema, add corresponding generator functions and seeding logic. Follow the existing pattern: generate with faker, check if table exists, truncate, insert.
 
+### review.sh — Review Orchestrator
+
+Orchestrates `/review <pr-number>`: the agent-to-agent review pipeline. A separate Claude Code session (fresh, no authoring memory) evaluates the PR against the linked issue spec, codebase conventions, and quality criteria.
+
+**Usage**:
+
+```bash
+scripts/review.sh <pr-number> [--budget N]
+```
+
+**What it does**, in order:
+
+1. Reads PR metadata: title, body, diff, branch, changed files.
+2. Extracts the linked issue number from `closingIssuesReferences` or PR body (`Closes #N`).
+3. Reads the linked issue body (the spec the PR should resolve).
+4. Gathers relevant CLAUDE.md files by walking up directories from each changed file.
+5. Gathers transitive dependencies (one level) — files imported by changed files.
+6. Enters the multi-pass review loop (up to N rounds, default: 5):
+   a. Invokes a **fresh** Claude Code session as the reviewer.
+   b. Reviewer evaluates: correctness, conventions, tests, types, accessibility.
+   c. Reviewer outputs a structured review with `REVIEW_STATUS: APPROVED | CHANGES_REQUESTED`.
+   d. Posts the review as a structured PR comment.
+   e. If approved → exits successfully.
+   f. If changes requested → creates a review worktree, invokes a separate Claude Code session as the author to fix issues, pushes fixes, cleans up worktree, loops.
+7. If the budget is exhausted without approval, posts an escalation comment and labels the PR `escalated`.
+
+**Flags**:
+
+- `--budget N` — Override the review retry limit (default: 5).
+
+**Environment variables**:
+
+- `GITHUB_TOKEN` — Required for `gh` CLI operations.
+- `REVIEW_BUDGET` — Override the default review budget (default: 5).
+- `REVIEW_DRY_RUN=1` — Skip Claude Code invocations (for testing the orchestration flow).
+
+**Review criteria**: correctness (does PR resolve the issue?), conventions (CLAUDE.md compliance), tests (sufficient and meaningful?), types (precise, no `any`?), accessibility (AA standard for UI changes).
+
+**Multi-pass protocol**: Each review round is posted as a structured PR comment with: approval status, issues found, issues resolved since last review, remaining concerns. The author agent receives review feedback and pushes fixes to the same branch.
+
+**Escalation**: When the review budget is exhausted, the script posts a summary of all unresolved concerns and labels the PR `escalated`. The PR stays open for human review.
+
+**Separation of concerns**: The reviewer is always a fresh Claude Code session. It has no memory of the authoring process — it evaluates output, not reasoning. The author revision agent is also a separate session, but receives the review feedback as input.
+
+**Integration with dispatch**: `dispatch.sh` calls `review.sh` automatically after producing a PR. The review budget matches the CI budget by default.
+
 ### bootstrap.sh — Bootstrap Orchestrator (Phase 6)
 
 Not yet implemented. Will orchestrate `/bootstrap`: create repo, deploy infrastructure, file product-level briefs as issues.
