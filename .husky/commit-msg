@@ -1,0 +1,2 @@
+# Commit message hook: commitlint for conventional commits
+npx --no -- commitlint --edit ${1}

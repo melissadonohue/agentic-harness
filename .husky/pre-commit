@@ -1,0 +1,15 @@
+# Pre-commit hook: Prettier, ESLint, gitleaks
+# All checks must pass before a commit is accepted.
+
+# Format check (Prettier)
+npx prettier --check . --ignore-unknown
+
+# Lint (ESLint with seam rules)
+npx eslint . --ext .js,.jsx,.ts,.tsx
+
+# Secret detection (gitleaks)
+if command -v gitleaks > /dev/null 2>&1; then
+  gitleaks protect --staged --verbose
+else
+  echo "warning: gitleaks not found — install for secret detection. CI will still catch secrets."
+fi

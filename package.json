@@ -1,0 +1,27 @@
+{
+  "name": "agentic-harness",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Reusable scaffolding system for building products with unsupervised AI agents",
+  "scripts": {
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-local-rules": "^3.0.2",
+    "husky": "^9.0.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0"
+  }
+}

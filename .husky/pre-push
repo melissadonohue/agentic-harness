@@ -1,0 +1,8 @@
+# Pre-push hook: type-check and unit tests
+# All checks must pass before a push is accepted.
+
+# Type-check
+npx tsc --noEmit
+
+# Unit tests
+npx vitest run

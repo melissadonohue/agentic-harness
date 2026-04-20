@@ -1,0 +1,14 @@
+# Default: repository owner reviews all PRs
+* @melissa-a-donohue
+
+# Charter and implementation plan changes require explicit review
+docs/charter.md @melissa-a-donohue
+docs/implementation_plan.md @melissa-a-donohue
+
+# ADRs require review
+docs/decisions/ @melissa-a-donohue
+
+# CI and infrastructure changes require review
+.github/ @melissa-a-donohue
+.husky/ @melissa-a-donohue
+.eslintrc.cjs @melissa-a-donohue
