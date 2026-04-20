@@ -1,0 +1,39 @@
+# Agentic Harness — Local Dev Services
+# Usage: docker compose -f docker/docker-compose.yml up
+#
+# Postgres: localhost:5432
+# Mailpit UI: http://localhost:8025
+# Mailpit SMTP: localhost:1025
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: harness-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: harness
+      POSTGRES_PASSWORD: harness
+      POSTGRES_DB: harness_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U harness -d harness_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: harness-mailpit
+    restart: unless-stopped
+    ports:
+      - '8025:8025' # Web UI
+      - '1025:1025' # SMTP
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  pgdata:
