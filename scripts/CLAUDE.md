@@ -30,7 +30,7 @@ scripts/dispatch.sh <issue-number> [--keep]
 12. Runs a CI budget loop — up to N rounds (default: 5) of push → CI check → fix.
 13. Creates a PR linked to the issue.
 14. Posts a completion checkpoint comment.
-15. Triggers `/review` (stub — implemented in Phase 4).
+15. Triggers `/review` via `review.sh`.
 16. Cleans up worktree, container, and database on exit (via `trap`).
 
 **Flags**:
@@ -118,6 +118,59 @@ scripts/review.sh <pr-number> [--budget N]
 
 **Integration with dispatch**: `dispatch.sh` calls `review.sh` automatically after producing a PR. The review budget matches the CI budget by default.
 
+### triage.sh — Triage Orchestrator
+
+Orchestrates `/triage <issue-number>`: the two-tier intake and readiness system. Bridges product-level briefs to dispatch-ready implementation issues.
+
+**Usage**:
+
+```bash
+scripts/triage.sh <issue-number> [--approve]
+```
+
+**What it does** — Two tiers plus an approval handler:
+
+**Tier 1 — Intake** (triggered when issue is labeled `product-brief` or auto-detected as product-level language):
+
+1. Reads the product brief from the issue body.
+2. Gathers codebase context: all CLAUDE.md convention docs, schema files, route structure, seam interfaces.
+3. Invokes Claude Code as the intake agent to propose a decomposition.
+4. The decomposition lists each proposed child issue with: convention reference, summary, dependencies, key parameters, and Definition of Done.
+5. Posts the decomposition as a structured comment on the brief issue.
+6. Removes `needs-triage` label if present. Awaits human approval.
+
+**Tier 2 — Readiness** (triggered when issue is implementation-level):
+
+1. Detects relevant CLAUDE.md conventions based on issue keywords.
+2. Invokes Claude Code as a readiness evaluator.
+3. Evaluates: scope clarity, convention mapping, key parameters, dependencies, Definition of Done.
+4. Outputs one of three statuses:
+   - `READY` → labels the issue `ready-for-agent` (triggers dispatch-on-label).
+   - `NEEDS_DETAIL` → flags specific missing inputs in a comment, labels `needs-triage`.
+   - `NEEDS_BREAKDOWN` → proposes sub-issues in a comment, labels `needs-triage`.
+
+**Approval handler** (`--approve`):
+
+1. Reads the most recent decomposition comment on a `product-brief` issue.
+2. Parses each `### Issue N:` block from the decomposition.
+3. Creates child issues via `gh issue create`, with parent brief link and full implementation details.
+4. Labels dependency-free issues `ready-for-agent`; labels dependent issues `blocked`.
+5. Posts a summary comment listing all created child issues.
+6. Adds `decomposition-approved` label to the parent brief.
+
+**Flags**:
+
+- `--approve` — Create child issues from an approved decomposition instead of running triage.
+
+**Environment variables**:
+
+- `GITHUB_TOKEN` — Required for `gh` CLI operations.
+- `TRIAGE_DRY_RUN=1` — Skip Claude Code invocations (for testing the orchestration flow).
+
+**Auto-detection**: If no `product-brief` label is present, the script auto-detects product-level language using signal scoring. Product signals: user outcome language ("users need", "ability to", "so that"). Implementation signals: file paths, code references, import/export statements. If product signals >= 2 and implementation signals < 2, the issue is treated as a product brief (Tier 1). Otherwise, Tier 2.
+
+**GitHub Actions integration**: `.github/workflows/triage-on-label.yml` triggers triage when an issue is labeled `product-brief` or `needs-triage`. The workflow also handles approval — when a comment starting with "approved" is posted on a `product-brief` issue, or when the `decomposition-approved` label is added, it runs `triage.sh --approve` to create child issues.
+
 ### bootstrap.sh — Bootstrap Orchestrator (Phase 6)
 
 Not yet implemented. Will orchestrate `/bootstrap`: create repo, deploy infrastructure, file product-level briefs as issues.
@@ -132,7 +185,7 @@ Not yet implemented. Will orchestrate `/bootstrap`: create repo, deploy infrastr
 ### Style
 
 - All shell scripts must use `set -euo pipefail` at the top.
-- All shell scripts must use a cleanup trap (`trap cleanup EXIT`) to prevent orphaned environments.
+- Shell scripts that create environments (worktrees, containers, databases) must use a cleanup trap (`trap cleanup EXIT`) to prevent orphaned resources. Scripts that only read and post comments (like `triage.sh`) do not need a cleanup trap.
 - All shell scripts must be executable (`chmod +x`).
 - Use descriptive function names. The script reads like a procedure, not a code golf entry.
 
@@ -146,4 +199,7 @@ Not yet implemented. Will orchestrate `/bootstrap`: create repo, deploy infrastr
 
 - Scripts are validated by running them. There are no unit tests for shell scripts.
 - The dispatch script is tested by dispatching a small test issue and verifying the full lifecycle.
+- The triage script is tested by triaging a product brief and an implementation issue.
 - Use `DISPATCH_DRY_RUN=1` to test the dispatch orchestration without invoking Claude Code.
+- Use `TRIAGE_DRY_RUN=1` to test the triage orchestration without invoking Claude Code.
+- Use `REVIEW_DRY_RUN=1` to test the review orchestration without invoking Claude Code.
