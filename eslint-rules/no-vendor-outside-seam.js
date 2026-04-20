@@ -79,6 +79,11 @@ module.exports = {
       if (srcIndex !== -1) {
         return normalized.slice(srcIndex + 1); // 'src/server/auth/index.ts'
       }
+      // For root-level files, extract just the filename
+      const lastSlash = normalized.lastIndexOf('/');
+      if (lastSlash !== -1) {
+        return normalized.slice(lastSlash + 1); // 'drizzle.config.ts'
+      }
       return normalized;
     }
 

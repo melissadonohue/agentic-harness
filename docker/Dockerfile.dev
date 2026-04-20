@@ -1,0 +1,32 @@
+# Agentic Harness — Dev Container for Dispatch Isolation
+# Used by scripts/dispatch.sh to run each agent in an isolated environment.
+
+FROM node:24-bookworm-slim
+
+# System deps for Playwright and general tooling
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# GitHub CLI for issue/PR operations
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+    | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy package files first for layer caching
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy the rest of the project
+COPY . .
+
+# Default command: start the dev server
+CMD ["npm", "run", "dev"]

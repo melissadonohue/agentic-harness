@@ -77,19 +77,19 @@ Infrastructure directories (Phase 1):
 - [`scripts/CLAUDE.md`](scripts/CLAUDE.md) — Script conventions, dispatch and bootstrap orchestration
 - [`eslint-rules/CLAUDE.md`](eslint-rules/CLAUDE.md) — Custom linter rule conventions, seam enforcement
 
-Application directories (created in Phase 2):
+Application directories (Phase 2):
 
-- `src/app/CLAUDE.md` — Page conventions, route placement, SEO, loading/error states
-- `src/server/CLAUDE.md` — Server module conventions, seam interface contracts
-- `src/server/auth/CLAUDE.md` — Auth seam conventions (Clerk)
-- `src/server/analytics/CLAUDE.md` — Analytics seam conventions (PostHog)
-- `src/server/observability/CLAUDE.md` — Observability seam conventions (Sentry)
-- `src/server/flags/CLAUDE.md` — Feature flags seam conventions (PostHog)
-- `src/server/db/CLAUDE.md` — Database conventions (Drizzle), entity patterns
-- `src/lib/CLAUDE.md` — Shared utilities, logger interface
-- `src/components/CLAUDE.md` — Component conventions (shadcn/ui, custom)
-- `tests/CLAUDE.md` — Test conventions, fixtures, seeds
-- `docker/CLAUDE.md` — Docker Compose, dev environment, Mailpit
+- [`src/app/CLAUDE.md`](src/app/CLAUDE.md) — Page conventions, route placement, SEO, loading/error states
+- [`src/server/CLAUDE.md`](src/server/CLAUDE.md) — Server module conventions, seam interface contracts
+- [`src/server/auth/CLAUDE.md`](src/server/auth/CLAUDE.md) — Auth seam conventions (Clerk)
+- [`src/server/analytics/CLAUDE.md`](src/server/analytics/CLAUDE.md) — Analytics seam conventions (PostHog)
+- [`src/server/observability/CLAUDE.md`](src/server/observability/CLAUDE.md) — Observability seam conventions (Sentry)
+- [`src/server/flags/CLAUDE.md`](src/server/flags/CLAUDE.md) — Feature flags seam conventions (PostHog)
+- [`src/server/db/CLAUDE.md`](src/server/db/CLAUDE.md) — Database conventions (Drizzle), entity patterns
+- [`src/lib/CLAUDE.md`](src/lib/CLAUDE.md) — Shared utilities, logger interface
+- [`src/components/CLAUDE.md`](src/components/CLAUDE.md) — Component conventions (shadcn/ui, custom)
+- [`tests/CLAUDE.md`](tests/CLAUDE.md) — Test conventions, fixtures, seeds
+- [`docker/CLAUDE.md`](docker/CLAUDE.md) — Docker Compose, dev environment, Mailpit
 
 ## Key References
 

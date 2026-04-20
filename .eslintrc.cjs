@@ -15,6 +15,7 @@ module.exports = {
     },
   },
   plugins: ['jsx-a11y', 'local-rules'],
+  ignorePatterns: ['.next/', 'node_modules/', 'dist/', 'coverage/', 'playwright-report/'],
   rules: {
     // Vendor seam containment — the harness's most important architectural invariant.
     // Each entry maps vendor packages to the seam directory where they are allowed.
@@ -48,10 +49,30 @@ module.exports = {
     ],
   },
   overrides: [
-    // TypeScript files — will use @typescript-eslint when TS parser is added in Phase 2
+    // TypeScript files
     {
       files: ['*.ts', '*.tsx'],
-      rules: {},
+      parser: '@typescript-eslint/parser',
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+      },
+      plugins: ['@typescript-eslint', 'react', 'react-hooks'],
+      extends: [
+        'plugin:@typescript-eslint/recommended',
+        'plugin:react/recommended',
+        'plugin:react-hooks/recommended',
+        'prettier',
+      ],
+      settings: {
+        react: { version: 'detect' },
+      },
+      rules: {
+        'react/react-in-jsx-scope': 'off',
+        'react/prop-types': 'off',
+        '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      },
     },
     // Custom ESLint rules and config files are CJS modules
     {
