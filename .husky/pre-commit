@@ -5,7 +5,7 @@
 npx prettier --check . --ignore-unknown
 
 # Lint (ESLint with seam rules)
-npx eslint . --ext .js,.jsx,.ts,.tsx
+npx eslint .
 
 # Secret detection (gitleaks)
 if command -v gitleaks > /dev/null 2>&1; then
