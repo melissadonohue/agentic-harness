@@ -291,4 +291,4 @@ These criteria are measurable, opinionated, and tied to the unsupervised target.
 
 ---
 
-*This charter is a living document versioned alongside the harness. Changes require an ADR in `docs/decisions/` before the charter is updated. The charter describes what is true and what must remain true. It does not describe aspirations.*
+_This charter is a living document versioned alongside the harness. Changes require an ADR in `docs/decisions/` before the charter is updated. The charter describes what is true and what must remain true. It does not describe aspirations._

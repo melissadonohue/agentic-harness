@@ -439,4 +439,4 @@ The quality score in `docs/quality-score.md` shows stable or improving trends in
 
 ---
 
-*This plan is a companion to the charter, not a replacement. The charter says what must be true. This plan says how to make it true. When they disagree, update the plan.*
+_This plan is a companion to the charter, not a replacement. The charter says what must be true. This plan says how to make it true. When they disagree, update the plan._
