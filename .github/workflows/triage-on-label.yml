@@ -1,0 +1,190 @@
+name: Triage on Label
+
+# Triggers when an issue is labeled 'product-brief' or 'needs-triage'.
+# Also triggers when an issue receives a comment containing "approved" on a
+# product-brief issue, to create child issues from the decomposition.
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Tier 1/2: Run triage when an issue is labeled
+  # -------------------------------------------------------------------------
+  triage:
+    name: Triage Issue
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'issues' &&
+      (github.event.label.name == 'product-brief' || github.event.label.name == 'needs-triage')
+
+    concurrency:
+      group: triage-issue-${{ github.event.issue.number }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run triage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/triage.sh
+          scripts/triage.sh ${{ github.event.issue.number }}
+
+      - name: Post failure comment
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "## Triage Failed
+
+          The triage workflow failed for issue #${{ github.event.issue.number }}.
+
+          **Workflow run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Please check the workflow logs for details.
+
+          ---
+          _Posted by \`triage-on-label.yml\` workflow_"
+
+  # -------------------------------------------------------------------------
+  # Approval: Create child issues when human approves a decomposition
+  # -------------------------------------------------------------------------
+  approve-decomposition:
+    name: Create Child Issues
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'issue_comment' &&
+      github.event.action == 'created' &&
+      contains(github.event.issue.labels.*.name, 'product-brief') &&
+      !contains(github.event.issue.labels.*.name, 'decomposition-approved') &&
+      (
+        github.event.comment.body == 'approved' ||
+        github.event.comment.body == 'Approved' ||
+        github.event.comment.body == 'APPROVED' ||
+        startsWith(github.event.comment.body, 'approved') ||
+        startsWith(github.event.comment.body, 'Approved')
+      )
+
+    concurrency:
+      group: approve-issue-${{ github.event.issue.number }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create child issues from approved decomposition
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/triage.sh
+          scripts/triage.sh ${{ github.event.issue.number }} --approve
+
+      - name: Post failure comment
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "## Child Issue Creation Failed
+
+          The approval workflow failed for issue #${{ github.event.issue.number }}.
+
+          **Workflow run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Please check the workflow logs for details.
+
+          ---
+          _Posted by \`triage-on-label.yml\` workflow_"
+
+  # -------------------------------------------------------------------------
+  # Label-triggered approval: Also handle decomposition-approved label
+  # -------------------------------------------------------------------------
+  approve-via-label:
+    name: Create Child Issues (via label)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'issues' &&
+      github.event.label.name == 'decomposition-approved' &&
+      contains(github.event.issue.labels.*.name, 'product-brief')
+
+    concurrency:
+      group: approve-issue-${{ github.event.issue.number }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create child issues from approved decomposition
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/triage.sh
+          scripts/triage.sh ${{ github.event.issue.number }} --approve
+
+      - name: Post failure comment
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "## Child Issue Creation Failed
+
+          The label-triggered approval workflow failed for issue #${{ github.event.issue.number }}.
+
+          **Workflow run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Please check the workflow logs for details.
+
+          ---
+          _Posted by \`triage-on-label.yml\` workflow_"
